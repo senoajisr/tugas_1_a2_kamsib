@@ -36,12 +36,12 @@ Ikuti langkah-langkah di bawah ini untuk menginstal dan menjalankan proyek ini s
 
 4. **Instal dependensi**:
    ```bash
-   pip install flask flask_sqlalchemy
+   pip3 install flask flask_sqlalchemy
    ```
 
 5. **Jalankan aplikasi**:
    ```bash
-   python app.py
+   python3 app.py
    ```
 
 6. **Akses aplikasi**:
