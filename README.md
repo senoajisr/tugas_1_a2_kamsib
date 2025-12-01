@@ -41,7 +41,7 @@ Ikuti langkah-langkah di bawah ini untuk menginstal dan menjalankan proyek ini s
 
 5. **Jalankan aplikasi**:
    ```bash
-   python app.py
+   python3 app.py
    ```
 
 6. **Akses aplikasi**:
