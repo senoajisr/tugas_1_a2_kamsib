@@ -4,11 +4,12 @@ from sqlalchemy import text
 from typing import Sequence, Optional
 from werkzeug.wrappers import Response
 import sqlite3
+from app_constants import *
 
 
 app: Flask = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///students.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config[SQLALCHEMY_DATABASE_URI] = APP_SQLITE_URI
+app.config[SQLALCHEMY_TRACK_MODIFICATIONS] = False
 db: SQLAlchemy = SQLAlchemy(app)
 
 
@@ -22,20 +23,20 @@ class Student(db.Model):
         return f'<Student {self.name}>'
 
 
-@app.route('/')
+@app.route(INDEX_ROUTE)
 def index() -> str:
     # RAW Query
-    students: Sequence = db.session.execute(text('SELECT * FROM student')).fetchall()
-    return render_template('index.html', students=students)
+    students: Sequence = db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
+    return render_template(INDEX_URI, students=students)
 
 
-@app.route('/add', methods=['POST'])
+@app.route(ADD_ROUTE, methods=[METHOD_POST])
 def add_student() -> Response:
-    name: str = request.form['name']
-    age: str = request.form['age']
-    grade: str = request.form['grade']
+    name: str = request.form[NAME_FORM_NAME]
+    age: str = request.form[AGE_FORM_NAME]
+    grade: str = request.form[GRADE_FORM_NAME]
     
-    connection: sqlite3.Connection = sqlite3.connect('instance/students.db')
+    connection: sqlite3.Connection = sqlite3.connect(SQLITE_STUDENT_DATABASE_PATH)
     cursor: sqlite3.Cursor = connection.cursor()
 
     # RAW Query
@@ -44,36 +45,36 @@ def add_student() -> Response:
     #     {'name': name, 'age': age, 'grade': grade}
     # )
     # db.session.commit()
-    query: str = f"INSERT INTO student (name, age, grade) VALUES ('{name}', {age}, '{grade}')"
+    query: str = INSERT_STUDENT_QUERY.format(name=name, age=age, grade=grade)
     cursor.execute(query)
     connection.commit()
     connection.close()
-    return redirect(url_for('index'))
+    return redirect(url_for(INDEX_PAGE))
 
 
-@app.route('/delete/<string:id>') 
+@app.route(DELETE_ROUTE) 
 def delete_student(id) -> Response:
     # RAW Query
-    db.session.execute(text(f"DELETE FROM student WHERE id={id}"))
+    db.session.execute(text(DELETE_STUDENT_BY_ID_QUERY.format(id=id)))
     db.session.commit()
-    return redirect(url_for('index'))
+    return redirect(url_for(INDEX_PAGE))
 
 
-@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+@app.route(EDIT_ROUTE, methods=[METHOD_GET, METHOD_POST])
 def edit_student(id) -> Response|str:
-    if request.method == 'POST':
-        name: str = request.form['name']
-        age: str = request.form['age']
-        grade: str = request.form['grade']
+    if request.method == METHOD_POST:
+        name: str = request.form[NAME_FORM_NAME]
+        age: str = request.form[AGE_FORM_NAME]
+        grade: str = request.form[GRADE_FORM_NAME]
         
         # RAW Query
-        db.session.execute(text(f"UPDATE student SET name='{name}', age={age}, grade='{grade}' WHERE id={id}"))
+        db.session.execute(text(UPDATE_STUDENT_QUERY.format(name=name, age=age, grade=grade, id=id)))
         db.session.commit()
-        return redirect(url_for('index'))
+        return redirect(url_for(INDEX_PAGE))
     else:
         # RAW Query
-        student: Optional[SQLAlchemy.Row] = db.session.execute(text(f"SELECT * FROM student WHERE id={id}")).fetchone()
-        return render_template('edit.html', student=student)
+        student: Optional[SQLAlchemy.Row] = db.session.execute(text(FETCH_ALL_STUDENT_QUERY.format(id=id))).fetchone()
+        return render_template(EDIT_URI, student=student)
 
 
 # if __name__ == '__main__':
@@ -83,5 +84,5 @@ def edit_student(id) -> Response|str:
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host=APP_HOST_URI, port=5000, debug=True)
 
