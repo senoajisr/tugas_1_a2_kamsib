@@ -80,6 +80,11 @@ def edit_student(id) -> Response|str:
         return render_template(EDIT_URI, student=student)
 
 
+def verify_form(name: str, age: str, grade: str):
+    if not verify_age_form(age):
+        return redirect(url_for(INDEX_PAGE))
+
+
 def verify_age_form(value: str) -> bool:
     if not validate_string_is_digit(value):
         return False
@@ -87,11 +92,6 @@ def verify_age_form(value: str) -> bool:
     if not validate_number_is_in_range(value, MIN_AGE, MAX_AGE):
         return False
     return True
-
-
-def verify_form(name: str, age: str, grade: str):
-    if not verify_age_form(age):
-        return redirect(url_for(INDEX_PAGE))
 
 
 def validate_string_is_digit(value: str) -> bool:
