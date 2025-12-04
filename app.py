@@ -13,9 +13,6 @@ app.config[SQLALCHEMY_TRACK_MODIFICATIONS_STRING] = SQLALCHEMY_TRACK_MODIFICATIO
 db: SQLAlchemy = SQLAlchemy(app)
 
 
-MIN_AGE: int = 0
-MAX_AGE: int = 122
-
 class Student(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
     name: str = db.Column(db.String(STUDENT_NAME_CHARACTER_LIMIT), nullable=False)
