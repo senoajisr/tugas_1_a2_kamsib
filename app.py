@@ -42,8 +42,6 @@ def add_student() -> Response:
     if not verify_age_form(age):
         return redirect(url_for(INDEX_PAGE))
     
-    age: int = int(age)
-    
     connection: sqlite3.Connection = sqlite3.connect(SQLITE_STUDENT_DATABASE_PATH)
     cursor: sqlite3.Cursor = connection.cursor()
 
@@ -88,6 +86,7 @@ def edit_student(id) -> Response|str:
 def verify_age_form(value: str) -> bool:
     if not validate_string_is_digit(value):
         return False
+    value: int = int(value)
     if not validate_number_is_in_range(value, MIN_AGE, MAX_AGE):
         return False
     return True
