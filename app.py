@@ -81,11 +81,11 @@ def edit_student(id) -> Response|str:
 
 
 def verify_form(name: str, age: str, grade: str) -> bool:
-    if not validate_characters_is_below_limit(name, STUDENT_NAME_CHARACTER_LIMIT):
+    if not validate_characters_is_at_or_below_limit(name, STUDENT_NAME_CHARACTER_LIMIT):
         return False
     if not verify_age_form(age):
         return False
-    if not validate_characters_is_below_limit(grade, STUDENT_GRADE_CHARACTER_LIMIT):
+    if not validate_characters_is_at_or_below_limit(grade, STUDENT_GRADE_CHARACTER_LIMIT):
         return False
     return True
 
@@ -107,8 +107,8 @@ def validate_number_is_in_range(value: int, min: int, max: int) -> bool:
     return value in range(min, max, 1)
 
 
-def validate_characters_is_below_limit(value: str, limit: int):
-    return len(value) < limit
+def validate_characters_is_at_or_below_limit(value: str, limit: int):
+    return len(value) <= limit
 
 
 # if __name__ == '__main__':
