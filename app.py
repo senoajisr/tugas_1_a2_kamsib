@@ -13,6 +13,9 @@ app.config[SQLALCHEMY_TRACK_MODIFICATIONS_STRING] = SQLALCHEMY_TRACK_MODIFICATIO
 db: SQLAlchemy = SQLAlchemy(app)
 
 
+MIN_AGE: int = 0
+MAX_AGE: int = 122
+
 class Student(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
     name: str = db.Column(db.String(STUDENT_NAME_CHARACTER_LIMIT), nullable=False)
@@ -35,6 +38,12 @@ def add_student() -> Response:
     name: str = request.form[NAME_FORM_NAME]
     age: str = request.form[AGE_FORM_NAME]
     grade: str = request.form[GRADE_FORM_NAME]
+    
+    if not validate_string_is_digit(age):
+        return redirect(url_for(INDEX_PAGE))
+    age: int = int(age)
+    if not validate_number_is_in_range(age, MIN_AGE, MAX_AGE):
+        return redirect(url_for(INDEX_PAGE))
     
     connection: sqlite3.Connection = sqlite3.connect(SQLITE_STUDENT_DATABASE_PATH)
     cursor: sqlite3.Cursor = connection.cursor()
@@ -76,6 +85,14 @@ def edit_student(id) -> Response|str:
         student: Optional[SQLAlchemy.Row] = db.session.execute(text(FETCH_ALL_STUDENT_QUERY.format(id=id))).fetchone()
         return render_template(EDIT_URI, student=student)
 
+
+
+def validate_string_is_digit(value: str) -> bool:
+    return value.isdigit()
+
+
+def validate_number_is_in_range(value: int, min: int, max: int):
+    return value in range(min, max, 1)
 
 # if __name__ == '__main__':
 #     with app.app_context():
