@@ -8,16 +8,16 @@ from app_constants import *
 
 
 app: Flask = Flask(__name__)
-app.config[SQLALCHEMY_DATABASE_URI] = APP_SQLITE_URI
-app.config[SQLALCHEMY_TRACK_MODIFICATIONS] = False
+app.config[SQLALCHEMY_DATABASE_URI_STRING] = APP_SQLITE_URI
+app.config[SQLALCHEMY_TRACK_MODIFICATIONS_STRING] = SQLALCHEMY_TRACK_MODIFICATIONS_VALUE
 db: SQLAlchemy = SQLAlchemy(app)
 
 
 class Student(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
-    name: str = db.Column(db.String(100), nullable=False)
+    name: str = db.Column(db.String(STUDENT_NAME_CHARACTER_LIMIT), nullable=False)
     age: int = db.Column(db.Integer, nullable=False)
-    grade: str = db.Column(db.String(10), nullable=False)
+    grade: str = db.Column(db.String(STUDENT_GRADE_CHARACTER_LIMIT), nullable=False)
 
     def __repr__(self):
         return f'<Student {self.name}>'
@@ -84,5 +84,5 @@ def edit_student(id) -> Response|str:
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(host=APP_HOST_URI, port=5000, debug=True)
+    app.run(host=APP_HOST_URI, port=APP_PORT, debug=APP_DEBUG)
 
