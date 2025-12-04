@@ -5,10 +5,12 @@ from typing import Sequence, Optional
 from werkzeug.wrappers import Response
 import sqlite3
 
+
 app: Flask = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///students.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db: SQLAlchemy = SQLAlchemy(app)
+
 
 class Student(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
@@ -19,11 +21,13 @@ class Student(db.Model):
     def __repr__(self):
         return f'<Student {self.name}>'
 
+
 @app.route('/')
 def index() -> str:
     # RAW Query
     students: Sequence = db.session.execute(text('SELECT * FROM student')).fetchall()
     return render_template('index.html', students=students)
+
 
 @app.route('/add', methods=['POST'])
 def add_student() -> Response:
@@ -31,7 +35,6 @@ def add_student() -> Response:
     age: str = request.form['age']
     grade: str = request.form['grade']
     
-
     connection: sqlite3.Connection = sqlite3.connect('instance/students.db')
     cursor: sqlite3.Cursor = connection.cursor()
 
@@ -71,6 +74,7 @@ def edit_student(id) -> Response|str:
         # RAW Query
         student: Optional[SQLAlchemy.Row] = db.session.execute(text(f"SELECT * FROM student WHERE id={id}")).fetchone()
         return render_template('edit.html', student=student)
+
 
 # if __name__ == '__main__':
 #     with app.app_context():
