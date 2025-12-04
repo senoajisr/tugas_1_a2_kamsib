@@ -39,11 +39,10 @@ def add_student() -> Response:
     age: str = request.form[AGE_FORM_NAME]
     grade: str = request.form[GRADE_FORM_NAME]
     
-    if not validate_string_is_digit(age):
+    if not verify_age_form(age):
         return redirect(url_for(INDEX_PAGE))
+    
     age: int = int(age)
-    if not validate_number_is_in_range(age, MIN_AGE, MAX_AGE):
-        return redirect(url_for(INDEX_PAGE))
     
     connection: sqlite3.Connection = sqlite3.connect(SQLITE_STUDENT_DATABASE_PATH)
     cursor: sqlite3.Cursor = connection.cursor()
@@ -85,6 +84,13 @@ def edit_student(id) -> Response|str:
         student: Optional[SQLAlchemy.Row] = db.session.execute(text(FETCH_ALL_STUDENT_QUERY.format(id=id))).fetchone()
         return render_template(EDIT_URI, student=student)
 
+
+def verify_age_form(value: str) -> bool:
+    if not validate_string_is_digit(value):
+        return False
+    if not validate_number_is_in_range(value, MIN_AGE, MAX_AGE):
+        return False
+    return True
 
 
 def validate_string_is_digit(value: str) -> bool:
