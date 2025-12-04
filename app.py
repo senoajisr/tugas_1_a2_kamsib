@@ -81,6 +81,8 @@ def edit_student(id) -> Response|str:
 
 
 def verify_form(name: str, age: str, grade: str) -> bool:
+    if not validate_characters_is_below_limit(name, STUDENT_NAME_CHARACTER_LIMIT):
+        return False
     if not verify_age_form(age):
         return False
     if not validate_characters_is_below_limit(grade, STUDENT_GRADE_CHARACTER_LIMIT):
