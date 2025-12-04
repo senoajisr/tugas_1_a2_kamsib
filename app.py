@@ -99,7 +99,7 @@ def validate_string_is_digit(value: str) -> bool:
     return value.isdigit()
 
 
-def validate_number_is_in_range(value: int, min: int, max: int):
+def validate_number_is_in_range(value: int, min: int, max: int) -> bool:
     return value in range(min, max, 1)
 
 # if __name__ == '__main__':
