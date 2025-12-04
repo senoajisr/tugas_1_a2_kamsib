@@ -80,9 +80,10 @@ def edit_student(id) -> Response|str:
         return render_template(EDIT_URI, student=student)
 
 
-def verify_form(name: str, age: str, grade: str):
+def verify_form(name: str, age: str, grade: str) -> bool:
     if not verify_age_form(age):
-        return redirect(url_for(INDEX_PAGE))
+        return False
+    return True
 
 
 def verify_age_form(value: str) -> bool:
