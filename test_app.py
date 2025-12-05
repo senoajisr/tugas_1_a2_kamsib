@@ -134,3 +134,16 @@ def test_form_add_age_at_lower_limit(client: FlaskClient, app: Flask):
     
     response: TestResponse = client.get("/")
     assert bytes(f"<td>{MIN_AGE}</td>", "utf-8") in response.data, fail_message
+
+
+def test_form_add_grade_over_limit(client: FlaskClient, app: Flask):
+    fail_message = f"grade with characters over {STUDENT_GRADE_CHARACTER_LIMIT} is not allowed"
+    above_limit: int = STUDENT_GRADE_CHARACTER_LIMIT+10
+    response = client.post(ADD_ROUTE, data={"name": "Lorem Ipsum", "age": "20", "grade": "a"*(above_limit)})
+    
+    with app.app_context():
+        students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
+        assert len(students) == 0, fail_message
+    
+    response: TestResponse = client.get("/")
+    assert not b"a"*above_limit in response.data, fail_message
