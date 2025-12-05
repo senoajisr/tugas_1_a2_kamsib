@@ -7,11 +7,8 @@ import sqlite3
 from app_constants import *
 
 
-db_path: str = SQLITE_STUDENT_DATABASE_PATH
-db_uri: str = APP_SQLITE_URI
-
 app: Flask = Flask(__name__)
-app.config[SQLALCHEMY_DATABASE_URI_STRING] = db_uri
+app.config[SQLALCHEMY_DATABASE_URI_STRING] = APP_SQLITE_URI
 app.config[SQLALCHEMY_TRACK_MODIFICATIONS_STRING] = SQLALCHEMY_TRACK_MODIFICATIONS_VALUE
 db: SQLAlchemy = SQLAlchemy(app)
 
@@ -42,7 +39,7 @@ def add_student() -> Response:
     if not verify_form(name, age, grade):
         return redirect(url_for(INDEX_PAGE))
     
-    connection: sqlite3.Connection = sqlite3.connect(db_path)
+    connection: sqlite3.Connection = sqlite3.connect(SQLITE_STUDENT_DATABASE_PATH)
     cursor: sqlite3.Cursor = connection.cursor()
 
     # RAW Query
