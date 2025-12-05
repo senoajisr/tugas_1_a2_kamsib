@@ -47,3 +47,16 @@ def test_form_add_proper(client: FlaskClient, app: Flask):
     assert b"<td>Lorem Ipsum</td>" in response.data, fail_message
     assert b"<td>20</td>" in response.data, fail_message
     assert b"<td>Ammet</td>" in response.data, fail_message
+
+
+def test_form_add_name_over_limit(client: FlaskClient, app: Flask):
+    fail_message = f"name with characters over {STUDENT_NAME_CHARACTER_LIMIT} is not allowed"
+    above_limit: int = STUDENT_NAME_CHARACTER_LIMIT+10
+    response = client.post(ADD_ROUTE, data={"name": "a"*(above_limit), "age": "20", "grade": "Ammet"})
+    
+    with app.app_context():
+        students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
+        assert len(students) == 0, fail_message
+    
+    response: TestResponse = client.get("/")
+    assert not b"a"*above_limit in response.data, fail_message
