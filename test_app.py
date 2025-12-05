@@ -84,3 +84,16 @@ def test_form_add_name_empty(client: FlaskClient, app: Flask):
     
     response: TestResponse = client.get("/")
     assert not b"<td>Ammet</td>" in response.data, fail_message
+
+
+def test_form_add_age_over_limit(client: FlaskClient, app: Flask):
+    fail_message = f"age with value over {MAX_AGE} is not allowed"
+    above_limit = MAX_AGE+1
+    response = client.post(ADD_ROUTE, data={"name": "Lorem Ipsum", "age": str(above_limit), "grade": "Ammet"})
+    
+    with app.app_context():
+        students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
+        assert len(students) == 0, fail_message
+    
+    response: TestResponse = client.get("/")
+    assert not bytes(f"<td>{above_limit}</td>", "utf-8") in response.data, fail_message
