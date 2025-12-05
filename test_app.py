@@ -72,3 +72,15 @@ def test_form_add_name_at_limit(client: FlaskClient, app: Flask):
     
     response: TestResponse = client.get("/")
     assert b"a"*STUDENT_NAME_CHARACTER_LIMIT in response.data, fail_message
+
+
+def test_form_add_name_empty(client: FlaskClient, app: Flask):
+    fail_message = "empty name field is not allowed"
+    response = client.post(ADD_ROUTE, data={"name": "", "age": "20", "grade": "Ammet"})
+    
+    with app.app_context():
+        students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
+        assert len(students) == 0, fail_message
+    
+    response: TestResponse = client.get("/")
+    assert not b"<td>Ammet</td>" in response.data, fail_message
