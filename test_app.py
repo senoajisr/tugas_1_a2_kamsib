@@ -159,3 +159,15 @@ def test_form_add_grade_at_limit(client: FlaskClient, app: Flask):
     
     response: TestResponse = client.get("/")
     assert b"a"*STUDENT_GRADE_CHARACTER_LIMIT in response.data, fail_message
+
+
+def test_form_add_grade_empty(client: FlaskClient, app: Flask):
+    fail_message = "empty grade field is not allowed"
+    response = client.post(ADD_ROUTE, data={"name": "Lorem Ipsum", "age": "20", "grade": ""})
+    
+    with app.app_context():
+        students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
+        assert len(students) == 0, fail_message
+    
+    response: TestResponse = client.get("/")
+    assert not b"<td>Lorem Ipsum</td>" in response.data, fail_message
