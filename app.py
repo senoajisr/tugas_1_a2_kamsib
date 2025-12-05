@@ -36,6 +36,9 @@ def add_student() -> Response:
     age: str = request.form[AGE_FORM_NAME]
     grade: str = request.form[GRADE_FORM_NAME]
     
+    if not verify_form(name, age, grade):
+        return redirect(url_for(INDEX_PAGE))
+    
     connection: sqlite3.Connection = sqlite3.connect(SQLITE_STUDENT_DATABASE_PATH)
     cursor: sqlite3.Cursor = connection.cursor()
 
@@ -75,6 +78,37 @@ def edit_student(id) -> Response|str:
         # RAW Query
         student: Optional[SQLAlchemy.Row] = db.session.execute(text(FETCH_ALL_STUDENT_QUERY.format(id=id))).fetchone()
         return render_template(EDIT_URI, student=student)
+
+
+def verify_form(name: str, age: str, grade: str) -> bool:
+    if not validate_characters_is_at_or_below_limit(name, STUDENT_NAME_CHARACTER_LIMIT):
+        return False
+    if not verify_age_form(age):
+        return False
+    if not validate_characters_is_at_or_below_limit(grade, STUDENT_GRADE_CHARACTER_LIMIT):
+        return False
+    return True
+
+
+def verify_age_form(value: str) -> bool:
+    if not validate_string_is_digit(value):
+        return False
+    value: int = int(value)
+    if not validate_number_is_in_range(value, MIN_AGE, MAX_AGE):
+        return False
+    return True
+
+
+def validate_string_is_digit(value: str) -> bool:
+    return value.isdigit()
+
+
+def validate_number_is_in_range(value: int, min: int, max: int) -> bool:
+    return value in range(min, max, 1)
+
+
+def validate_characters_is_at_or_below_limit(value: str, limit: int):
+    return len(value) <= limit
 
 
 # if __name__ == '__main__':
