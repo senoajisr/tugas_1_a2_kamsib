@@ -104,11 +104,13 @@ def validate_string_is_digit(value: str) -> bool:
 
 
 def validate_number_is_in_range(value: int, min: int, max: int) -> bool:
-    return value in range(min, max, 1)
+    at_max: int = max+1
+    return value in range(min, at_max, 1)
 
 
-def validate_characters_is_at_or_below_limit(value: str, limit: int):
-    return len(value) <= limit
+def validate_characters_is_at_or_below_limit(value: str, limit: int) -> bool:
+    at_limit: int = limit+1
+    return len(value) in range(1, at_limit)
 
 
 # if __name__ == '__main__':
