@@ -35,9 +35,15 @@ def test_home(client: FlaskClient) -> None:
     assert b"<h1>Students</h1>" in response.data
 
 
-def test_proper_add_form(client: FlaskClient, app: Flask):
-    response = client.post(ADD_ROUTE, data={"name": "testing", "age": "20", "grade": "A"})
+def test_form_add_proper(client: FlaskClient, app: Flask):
+    fail_message = "the proper input for the form should be stored and displayed"
+    response = client.post(ADD_ROUTE, data={"name": "Lorem Ipsum", "age": "20", "grade": "Ammet"})
     
     with app.app_context():
         students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
-        assert len(students) == 1
+        assert len(students) == 1, fail_message
+    
+    response: TestResponse = client.get("/")
+    assert b"<td>Lorem Ipsum</td>" in response.data, fail_message
+    assert b"<td>20</td>" in response.data, fail_message
+    assert b"<td>Ammet</td>" in response.data, fail_message
