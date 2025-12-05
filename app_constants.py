@@ -22,6 +22,7 @@ INSERT_STUDENT_QUERY: str = "INSERT INTO student (name, age, grade) VALUES ('{na
 UPDATE_STUDENT_QUERY: str = "UPDATE student SET name='{name}', age={age}, grade='{grade}' WHERE id={id}"
 FETCH_STUDENT_BY_ID_QUERY: str = "SELECT * FROM student WHERE id={id}"
 DELETE_STUDENT_BY_ID_QUERY = "DELETE FROM student WHERE id={id}"
+DELETE_ALL_STUDENT_QUERY: str = "DELETE FROM student"
 
 NAME_FORM_NAME: str = "name"
 AGE_FORM_NAME: str = "age"
