@@ -12,10 +12,16 @@ import pytest
 
 @pytest.fixture()
 def app() -> Generator[Any, Any, Any]:
-    main_app.db_path = TEST_SQLITE_STUDENT_DATABASE_PATH
-    main_app.db_uri = TEST_APP_SQLITE_URI
     app: Flask = main_app.app
 
+    with app.app_context():
+        # Create DB
+        main_app.db.create_all()
+        
+        # Reset student table
+        main_app.db.session.execute(text(DELETE_ALL_STUDENT_QUERY.format(id=id)))
+        main_app.db.session.commit()
+    
     yield app
 
 
