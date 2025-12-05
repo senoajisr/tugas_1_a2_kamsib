@@ -147,3 +147,15 @@ def test_form_add_grade_over_limit(client: FlaskClient, app: Flask):
     
     response: TestResponse = client.get("/")
     assert not b"a"*above_limit in response.data, fail_message
+
+
+def test_form_add_grade_at_limit(client: FlaskClient, app: Flask):
+    fail_message = f"grade with characters at {STUDENT_GRADE_CHARACTER_LIMIT} is allowed"
+    response = client.post(ADD_ROUTE, data={"name": "Lorem Ipsum", "age": "20", "grade": "a"*STUDENT_GRADE_CHARACTER_LIMIT})
+    
+    with app.app_context():
+        students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
+        assert len(students) == 1, fail_message
+    
+    response: TestResponse = client.get("/")
+    assert b"a"*STUDENT_GRADE_CHARACTER_LIMIT in response.data, fail_message
