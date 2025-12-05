@@ -109,3 +109,16 @@ def test_form_add_age_at_upper_limit(client: FlaskClient, app: Flask):
     
     response: TestResponse = client.get("/")
     assert bytes(f"<td>{MAX_AGE}</td>", "utf-8") in response.data, fail_message
+
+
+def test_form_add_age_under_limit(client: FlaskClient, app: Flask):
+    fail_message = f"age with value under {MIN_AGE} is not allowed"
+    under_limit = MIN_AGE-1
+    response = client.post(ADD_ROUTE, data={"name": "Lorem Ipsum", "age": str(under_limit), "grade": "Ammet"})
+    
+    with app.app_context():
+        students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
+        assert len(students) == 0, fail_message
+    
+    response: TestResponse = client.get("/")
+    assert not bytes(f"<td>{under_limit}</td>", "utf-8") in response.data, fail_message
