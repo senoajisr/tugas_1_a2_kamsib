@@ -35,7 +35,7 @@ def test_home(client: FlaskClient) -> None:
     assert b"<h1>Students</h1>" in response.data
 
 
-def test_form_add_proper(client: FlaskClient, app: Flask):
+def test_form_add_proper(client: FlaskClient, app: Flask) -> None:
     fail_message: str = "the proper input for the form should be stored and displayed"
     response: TestResponse = client.post(ADD_ROUTE, data={"name": "Lorem Ipsum", "age": "20", "grade": "Ammet"})
     
@@ -43,7 +43,7 @@ def test_form_add_proper(client: FlaskClient, app: Flask):
         students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
         assert len(students) == 1, fail_message
     
-    response: TestResponse = client.get("/")
+    response = client.get("/")
     assert b"<td>Lorem Ipsum</td>" in response.data, fail_message
     assert b"<td>20</td>" in response.data, fail_message
     assert b"<td>Ammet</td>" in response.data, fail_message
@@ -58,7 +58,7 @@ def test_form_add_name_over_limit(client: FlaskClient, app: Flask) -> None:
         students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
         assert len(students) == 0, fail_message
     
-    response: TestResponse = client.get("/")
+    response = client.get("/")
     assert not b"a"*above_limit in response.data, fail_message
 
 
@@ -82,7 +82,7 @@ def test_form_add_name_empty(client: FlaskClient, app: Flask) -> None:
         students: Sequence = main_app.db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
         assert len(students) == 0, fail_message
     
-    response: TestResponse = client.get("/")
+    response = client.get("/")
     assert not b"<td>Ammet</td>" in response.data, fail_message
 
 
