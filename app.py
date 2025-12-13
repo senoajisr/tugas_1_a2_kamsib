@@ -5,7 +5,7 @@ from typing import Sequence, Optional
 from werkzeug.wrappers import Response
 import sqlite3
 from app_constants import *
-
+from markupsafe import escape #Penambahan import
 
 app: Flask = Flask(__name__)
 app.config[SQLALCHEMY_DATABASE_URI_STRING] = APP_SQLITE_URI
@@ -32,9 +32,9 @@ def index() -> str:
 
 @app.route(ADD_ROUTE, methods=[METHOD_POST])
 def add_student() -> Response:
-    name: str = request.form[NAME_FORM_NAME]
+    name: str = escape(request.form[NAME_FORM_NAME]) #name: str = request.form[NAME_FORM_NAME]
     age: str = request.form[AGE_FORM_NAME]
-    grade: str = request.form[GRADE_FORM_NAME]
+    grade: str = escape(request.form[GRADE_FORM_NAME]) #grade: str = request.form[GRADE_FORM_NAME]
     
     if not verify_form(name, age, grade):
         return redirect(url_for(INDEX_PAGE))
@@ -66,9 +66,9 @@ def delete_student(id) -> Response:
 @app.route(EDIT_ROUTE, methods=[METHOD_GET, METHOD_POST])
 def edit_student(id) -> Response|str:
     if request.method == METHOD_POST:
-        name: str = request.form[NAME_FORM_NAME]
+        name: str = escape(request.form[NAME_FORM_NAME]) #name: str = request.form[NAME_FORM_NAME]
         age: str = request.form[AGE_FORM_NAME]
-        grade: str = request.form[GRADE_FORM_NAME]
+        grade: str = escape(request.form[GRADE_FORM_NAME]) #grade: str = request.form[GRADE_FORM_NAME]
         
         # RAW Query
         db.session.execute(text(UPDATE_STUDENT_QUERY.format(name=name, age=age, grade=grade, id=id)))
