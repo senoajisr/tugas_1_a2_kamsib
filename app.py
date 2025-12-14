@@ -70,6 +70,9 @@ def edit_student(id) -> Response|str:
         age: str = request.form[AGE_FORM_NAME]
         grade: str = request.form[GRADE_FORM_NAME]
         
+        if not verify_form(name, age, grade):
+            return redirect(url_for(INDEX_PAGE))
+        
         # RAW Query
         db.session.execute(text(UPDATE_STUDENT_QUERY.format(name=name, age=age, grade=grade, id=id)))
         db.session.commit()
