@@ -1,124 +1,106 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, session
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
-from typing import Sequence, Optional
-from werkzeug.wrappers import Response
-import sqlite3
-from app_constants import *
+from functools import wraps
 
+app = Flask(__name__)
+app.secret_key = "secret123"
 
-app: Flask = Flask(__name__)
-app.config[SQLALCHEMY_DATABASE_URI_STRING] = APP_SQLITE_URI
-app.config[SQLALCHEMY_TRACK_MODIFICATIONS_STRING] = SQLALCHEMY_TRACK_MODIFICATIONS_VALUE
-db: SQLAlchemy = SQLAlchemy(app)
+# Konfigurasi database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///students.db'
+db = SQLAlchemy(app)
 
-
+# Model database
 class Student(db.Model):
-    id: int = db.Column(db.Integer, primary_key=True)
-    name: str = db.Column(db.String(STUDENT_NAME_CHARACTER_LIMIT), nullable=False)
-    age: int = db.Column(db.Integer, nullable=False)
-    grade: str = db.Column(db.String(STUDENT_GRADE_CHARACTER_LIMIT), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    age = db.Column(db.Integer)
+    grade = db.Column(db.String(10))
 
-    def __repr__(self):
-        return f'<Student {self.name}>'
+# Decorator login
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect('/')
+        return f(*args, **kwargs)
+    return decorated
 
+# Route LOGIN
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-@app.route(INDEX_ROUTE)
-def index() -> str:
-    # RAW Query
-    students: Sequence = db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
-    return render_template(INDEX_URI, students=students)
+        if username == "admin" and password == "admin":
+            session['logged_in'] = True
+            return redirect('/home')
+        else:
+            return render_template('login.html', error="Username/Password salah!")
 
+    return render_template('login.html')
 
-@app.route(ADD_ROUTE, methods=[METHOD_POST])
-def add_student() -> Response:
-    name: str = request.form[NAME_FORM_NAME]
-    age: str = request.form[AGE_FORM_NAME]
-    grade: str = request.form[GRADE_FORM_NAME]
-    
-    if not verify_form(name, age, grade):
-        return redirect(url_for(INDEX_PAGE))
-    
-    connection: sqlite3.Connection = sqlite3.connect(SQLITE_STUDENT_DATABASE_PATH)
-    cursor: sqlite3.Cursor = connection.cursor()
+# HOME
+@app.route('/home')
+@login_required
+def home():
+    students = Student.query.all()
+    return render_template('home.html', students=students)
 
-    # RAW Query
-    # db.session.execute(
-    #     text("INSERT INTO student (name, age, grade) VALUES (:name, :age, :grade)"),
-    #     {'name': name, 'age': age, 'grade': grade}
-    # )
-    # db.session.commit()
-    query: str = INSERT_STUDENT_QUERY.format(name=name, age=age, grade=grade)
-    cursor.execute(query)
-    connection.commit()
-    connection.close()
-    return redirect(url_for(INDEX_PAGE))
+# ADD STUDENT
+@app.route('/add', methods=['POST'])
+@login_required
+def add():
+    name = request.form['name']
+    age = int(request.form['age'])
+    grade = request.form['grade']
 
-
-@app.route(DELETE_ROUTE) 
-def delete_student(id) -> Response:
-    # RAW Query
-    db.session.execute(text(DELETE_STUDENT_BY_ID_QUERY.format(id=id)))
+    new_student = Student(name=name, age=age, grade=grade)
+    db.session.add(new_student)
     db.session.commit()
-    return redirect(url_for(INDEX_PAGE))
+    return redirect('/home')
 
+# EDIT STUDENT
+@app.route('/edit/<int:id>')
+@login_required
+def edit(id):
+    student = Student.query.get(id)
+    if not student:
+        return redirect('/home')
+    return render_template('edit.html', student=student)
 
-@app.route(EDIT_ROUTE, methods=[METHOD_GET, METHOD_POST])
-def edit_student(id) -> Response|str:
-    if request.method == METHOD_POST:
-        name: str = request.form[NAME_FORM_NAME]
-        age: str = request.form[AGE_FORM_NAME]
-        grade: str = request.form[GRADE_FORM_NAME]
-        
-        # RAW Query
-        db.session.execute(text(UPDATE_STUDENT_QUERY.format(name=name, age=age, grade=grade, id=id)))
+# UPDATE STUDENT
+@app.route('/update/<int:id>', methods=['POST'])
+@login_required
+def update(id):
+    student = Student.query.get(id)
+    if not student:
+        return redirect('/home')
+
+    student.name = request.form['name']
+    student.age = int(request.form['age'])
+    student.grade = request.form['grade']
+    db.session.commit()
+    return redirect('/home')
+
+# DELETE STUDENT
+@app.route('/delete/<int:id>')
+@login_required
+def delete(id):
+    student = Student.query.get(id)
+    if student:
+        db.session.delete(student)
         db.session.commit()
-        return redirect(url_for(INDEX_PAGE))
-    else:
-        # RAW Query
-        student: Optional[SQLAlchemy.Row] = db.session.execute(text(FETCH_ALL_STUDENT_QUERY.format(id=id))).fetchone()
-        return render_template(EDIT_URI, student=student)
+    return redirect('/home')
 
+# LOGOUT
+@app.route('/logout')
+@login_required
+def logout():
+    session.clear()
+    return redirect('/')
 
-def verify_form(name: str, age: str, grade: str) -> bool:
-    if not validate_characters_is_at_or_below_limit(name, STUDENT_NAME_CHARACTER_LIMIT):
-        return False
-    if not verify_age_form(age):
-        return False
-    if not validate_characters_is_at_or_below_limit(grade, STUDENT_GRADE_CHARACTER_LIMIT):
-        return False
-    return True
-
-
-def verify_age_form(value: str) -> bool:
-    if not validate_string_is_digit(value):
-        return False
-    value: int = int(value)
-    if not validate_number_is_in_range(value, MIN_AGE, MAX_AGE):
-        return False
-    return True
-
-
-def validate_string_is_digit(value: str) -> bool:
-    return value.isdigit()
-
-
-def validate_number_is_in_range(value: int, min: int, max: int) -> bool:
-    at_max: int = max+1
-    return value in range(min, at_max, 1)
-
-
-def validate_characters_is_at_or_below_limit(value: str, limit: int) -> bool:
-    at_limit: int = limit+1
-    return len(value) in range(1, at_limit)
-
-
-# if __name__ == '__main__':
-#     with app.app_context():
-#         db.create_all()
-#     app.run(debug=True)
-if __name__ == '__main__':
+if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(host=APP_HOST_URI, port=APP_PORT, debug=APP_DEBUG)
-
+    app.run(debug=True)
