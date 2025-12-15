@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from typing import Sequence, Optional
@@ -6,8 +6,11 @@ from werkzeug.wrappers import Response
 import sqlite3
 from app_constants import *
 from markupsafe import escape
+from functools import wraps
+
 
 app: Flask = Flask(__name__)
+app.secret_key = APP_SECRET_KEY
 app.config[SQLALCHEMY_DATABASE_URI_STRING] = APP_SQLITE_URI
 app.config[SQLALCHEMY_TRACK_MODIFICATIONS_STRING] = SQLALCHEMY_TRACK_MODIFICATIONS_VALUE
 db: SQLAlchemy = SQLAlchemy(app)
@@ -23,21 +26,48 @@ class Student(db.Model):
         return f'<Student {self.name}>'
 
 
-@app.route(INDEX_ROUTE)
-def index() -> str:
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(INDEX_ROUTE)
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route(INDEX_ROUTE, methods=[METHOD_GET, METHOD_POST])
+def login():
+    if request.method == METHOD_POST:
+        username = request.form[USERNAME_FORM_NAME]
+        password = request.form[PASSWORD_FORM_NAME]
+
+        if username == APP_ADMIN_USERNAME and password == APP_ADMIN_PASSWORD:
+            session[SESSION_LOGGED_IN_STRING] = True
+            return redirect(HOME_ROUTE)
+        else:
+            return render_template(LOGIN_URI, error=INCORRECT_LOGIN_WARNING)
+
+    return render_template(LOGIN_URI)
+
+
+
+@app.route(HOME_ROUTE)
+@login_required
+def home() -> str:
     # RAW Query
     students: Sequence = db.session.execute(text(FETCH_ALL_STUDENT_QUERY)).fetchall()
-    return render_template(INDEX_URI, students=students)
+    return render_template(HOME_URI, students=students)
 
 
 @app.route(ADD_ROUTE, methods=[METHOD_POST])
+@login_required
 def add_student() -> Response:
     name: str = escape(request.form[NAME_FORM_NAME])
     age: str = request.form[AGE_FORM_NAME]
     grade: str = escape(request.form[GRADE_FORM_NAME])
     
     if not verify_form(name, age, grade):
-        return redirect(url_for(INDEX_PAGE))
+        return redirect(url_for(HOME_PAGE))
     
     connection: sqlite3.Connection = sqlite3.connect(SQLITE_STUDENT_DATABASE_PATH)
     cursor: sqlite3.Cursor = connection.cursor()
@@ -52,18 +82,20 @@ def add_student() -> Response:
     cursor.execute(query)
     connection.commit()
     connection.close()
-    return redirect(url_for(INDEX_PAGE))
+    return redirect(url_for(HOME_PAGE))
 
 
-@app.route(DELETE_ROUTE) 
+@app.route(DELETE_ROUTE)
+@login_required
 def delete_student(id) -> Response:
     # RAW Query
     db.session.execute(text(DELETE_STUDENT_BY_ID_QUERY.format(id=id)))
     db.session.commit()
-    return redirect(url_for(INDEX_PAGE))
+    return redirect(url_for(HOME_PAGE))
 
 
 @app.route(EDIT_ROUTE, methods=[METHOD_GET, METHOD_POST])
+@login_required
 def edit_student(id) -> Response|str:
     if request.method == METHOD_POST:
         name: str = escape(request.form[NAME_FORM_NAME])
@@ -71,12 +103,12 @@ def edit_student(id) -> Response|str:
         grade: str = escape(request.form[GRADE_FORM_NAME])
         
         if not verify_form(name, age, grade):
-            return redirect(url_for(INDEX_PAGE))
+            return redirect(url_for(HOME_PAGE))
         
         # RAW Query
         db.session.execute(text(UPDATE_STUDENT_QUERY.format(name=name, age=age, grade=grade, id=id)))
         db.session.commit()
-        return redirect(url_for(INDEX_PAGE))
+        return redirect(url_for(HOME_PAGE))
     else:
         # RAW Query
         student: Optional[SQLAlchemy.Row] = db.session.execute(text(FETCH_ALL_STUDENT_QUERY.format(id=id))).fetchone()
@@ -116,12 +148,18 @@ def validate_characters_is_at_or_below_limit(value: str, limit: int) -> bool:
     return len(value) in range(1, at_limit)
 
 
+@app.route(LOGOUT_ROUTE)
+@login_required
+def logout():
+    session.clear()
+    return redirect(INDEX_ROUTE)
+
+
 # if __name__ == '__main__':
 #     with app.app_context():
 #         db.create_all()
 #     app.run(debug=True)
-if __name__ == '__main__':
+if __name__ == "__main__":
     with app.app_context():
         db.create_all()
     app.run(host=APP_HOST_URI, port=APP_PORT, debug=APP_DEBUG)
-
